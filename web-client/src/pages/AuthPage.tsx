@@ -1,7 +1,6 @@
-import { AuthContext } from "@/AuthContext"
 import { useContext, useEffect } from "react"
 import { useNavigate } from "react-router"
-import { AuthSnippet } from "./Auth";
+import { AuthSnippet, AuthContext } from "../AuthContext";
 
 
 export const AuthPage = () => {
