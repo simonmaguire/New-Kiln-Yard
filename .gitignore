@@ -1,3 +1,6 @@
 docs/*
 
 web-client/.env
+
+server/kilnyardenv/*
+server/.env
