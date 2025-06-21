@@ -8,6 +8,7 @@ import { type Session } from "@supabase/supabase-js";
 
 interface IAuthContext {
     session: Session | null,
+    isLoading: boolean,
     signOut: (() => void) | undefined 
 }
 
@@ -20,16 +21,17 @@ const supabase = createClient(
   import.meta.env.VITE_SUPA_ANON_KEY
 );
 
-export const AuthContext = createContext<IAuthContext>({session: null, signOut: undefined})
+export const AuthContext = createContext<IAuthContext>({session: null, signOut: undefined, isLoading: true})
 
 
 export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({children}) => {
     const [session, setSession] = useState<Session | null>(null);
+    const [isLoading, setIsLoading] = useState(true)
     
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-        });
+        }).finally(() => setIsLoading(false));
         
         const {data: { subscription }} = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
@@ -50,7 +52,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({childre
     }
     
     return(
-        <AuthContext.Provider value={{session, signOut}}>
+        <AuthContext.Provider value={{session, signOut, isLoading}}>
         {children}
     </AuthContext.Provider>
     )
