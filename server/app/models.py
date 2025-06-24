@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import datetime, date
+from optparse import Option
 from typing import Optional, List
 import sqlalchemy as sa
 from sqlalchemy.orm import mapped_column, relationship, Mapped
@@ -7,18 +8,21 @@ from app import db
 
 class Pot(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
+    description: Mapped[Optional[str]] = mapped_column(sa.String(120))
     clay: Mapped[Optional[str]] = mapped_column(sa.String(60))
     stage: Mapped[Optional[str]] = mapped_column(sa.String(60))
     category: Mapped[Optional[str]] = mapped_column(sa.String(60))
-    throw_date: Mapped[Optional[date]] = mapped_column()
+    throw_date: Mapped[Optional[datetime]] = mapped_column()
     clay_weight: Mapped[Optional[float]] = mapped_column()
     thrown_height: Mapped[Optional[float]] = mapped_column()
     thrown_width: Mapped[Optional[float]] = mapped_column()
     thrown_notes: Mapped[Optional[str]] = mapped_column(sa.String(255))
-    trim_date: Mapped[Optional[date]] = mapped_column()
+    trim_date: Mapped[Optional[datetime]] = mapped_column()
+    green_decor: Mapped[Optional[str]] = mapped_column(sa.String(120))
     trim_notes: Mapped[Optional[str]] = mapped_column(sa.String(255))
     glazes: Mapped[List["Glaze"]] = relationship(back_populates='pot')
     glaze_notes: Mapped[Optional[str]] = mapped_column(sa.String(255))
+    finished_date: Mapped[Optional[datetime]] = mapped_column()
     finished_width: Mapped[Optional[float]] = mapped_column()
     finished_height: Mapped[Optional[float]] = mapped_column()
     finished_notes: Mapped[Optional[str]] = mapped_column(sa.String(255))
@@ -76,6 +80,7 @@ class PotSchema(SQLAlchemySchema):
     trim_notes = auto_field()
     glazes = auto_field()
     glaze_notes = auto_field()
+    finished_date = auto_field()
     finished_width = auto_field()
     finished_height = auto_field()
     finished_notes = auto_field()

@@ -15,7 +15,7 @@ const router = createBrowserRouter([
     { path: 'auth', element: <AuthPage /> },
     {element: <ProtectedRoute/>, children: [
       { path: 'pottery', element: <PotteryCollectionPage /> },
-      { path: 'pot', element: <PotteryNotePage/>}
+      { path: 'pot/:potID?', element: <PotteryNotePage/>}
     ]},
   ]}
 ])

@@ -20,6 +20,29 @@ import { Calendar } from "@/components/ui/calendar"
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from "react-hook-form"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { useNavigate, useParams } from "react-router"
+
+interface IFormFields {
+    description: string,
+    clay: string,
+    category?: string | undefined,
+    stage?: string | undefined,
+    clayWeight: string,
+    throwHeight: string,
+    throwWidth: string,
+    throwNotes: string,
+    greenDecor: string,
+    trimNotes: string,
+    glazes: string,
+    glazeNotes: string,
+    finishedHeight: string,
+    finishedWidth: string,
+    finishedNotes: string,
+    throwDate?: Date | undefined,
+    trimDate?: Date | undefined,
+    finishedDate?: Date | undefined
+}
 
 const formSchema = z.object({
     clay: z.string().max(60, {message: 'Max 60 characters'}),
@@ -28,54 +51,95 @@ const formSchema = z.object({
     stage: z.string().optional(),
 
     throwDate: z.date().optional(),
-    clayWeight: z.string().max(10, {message: 'Max 10 characters'}),
-    throwHeight: z.string().max(10, {message: 'Max 10 characters'}),
-    throwWidth: z.string().max(10, {message: 'Max 10 characters'}),
+    clayWeight: z.string().regex(/^\d*[.]?\d*$/),
+    throwHeight: z.string().regex(/^\d*[.]?\d*$/),
+    throwWidth: z.string().regex(/^\d*[.]?\d*$/),
     throwNotes: z.string().max(150, {message: 'Max 150 characters'}),
     //throwPics
 
     trimDate: z.date().optional(),
-    greenDecor: z.string().max(10, {message: 'Max 60 characters'}),
-    trimNotes: z.string().max(10, {message: 'Max 150 characters'}),
+    greenDecor: z.string().max(60, {message: 'Max 60 characters'}),
+    trimNotes: z.string().max(150, {message: 'Max 150 characters'}),
 
     glazes: z.string().max(60, {message: 'Max 60 characters'}),
     glazeNotes: z.string().max(150, {message: 'Max 150 characters'}),
 
     finishedDate: z.date().optional(),
-    finishedHeight: z.string().max(10, {message: 'Max 10 characters'}),
-    finishedWidth: z.string().max(10, {message: 'Max 10 characters'}),
+    finishedHeight: z.string().regex(/^\d*[.]?\d*$/),
+    finishedWidth: z.string().regex(/^\d*[.]?\d*$/),
     finishedNotes: z.string().max(150, {message: 'Max 150 characters'}),
     //finishedPics
 
 
 })
 
-export const PotForm = () => {
+export const PotForm = ({data}) => {
+    const navigate = useNavigate()
+    const {potID} = useParams()
+
+    console.log(data);
+
+    let initialValues: IFormFields = {
+        description: data?.description || '',
+        clay: data.clay || '',
+        category: data.category || '',
+        stage: data.stage || '',
+        clayWeight: data.clay_weight || '',
+        throwHeight: data.thrown_height || '',
+        throwWidth: data.thrown_width || '',
+        throwNotes: data.thrown_notes || '',
+        greenDecor: data.green_decor || '',
+        trimNotes: data.trim_notes || '',
+        glazes: '',
+        glazeNotes: data.glaze_notes || '',
+        finishedWidth: data.finished_width || '',
+        finishedHeight: data.finished_height || '',
+        finishedNotes: data.finished_notes || '',
+    }
+    data.throw_date ? initialValues.throwDate = new Date(data.throw_date) : null;
+    data.trim_date ? initialValues.trimDate = new Date(data.trim_date) : null;
+    data.finished_date ? initialValues.finishedDate = new Date(data.finished_date) : null;
+    
+      
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            description: '',
-            clay: '',
-            category: '',
-            stage: '',
-            clayWeight: '',
-            throwHeight: '',
-            throwWidth: '',
-            throwNotes: '',
-            greenDecor: '',
-            trimNotes: '',
-            glazes: '',
-            glazeNotes: '',
-            finishedHeight: '',
-            finishedWidth: '',
-            finishedNotes: '',
-        }
+        defaultValues: initialValues
     })
-    const onSubmit = (values: z.infer<typeof formSchema>) => {
-        console.log(values);
-        
-    }
+    
+    const createMutation = useMutation({
+        mutationFn: async (data: IFormFields) => {
+            const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/create-pot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+          })
+          if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+          response.json().then((data) => navigate(`./${data.id}`))
+        }
+      })
 
+      const updateMutation = useMutation({
+        mutationFn: async (data: IFormFields) => {
+            const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/update-pot/${potID}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+          })
+          if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+          return response.json()
+        }
+      })
+
+      const onSubmit = (values: z.infer<typeof formSchema>) => {
+          console.log(values);
+
+          potID ? updateMutation.mutate((values)) : createMutation.mutate((values))
+      }
+      console.log(potID);
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
@@ -421,7 +485,7 @@ export const PotForm = () => {
                         <FormItem>
                             <FormLabel>Finished Width</FormLabel>
                             <FormControl>
-                                <Input {...field} />
+                                <Input type="number" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -451,9 +515,27 @@ export const PotForm = () => {
 }
 
 export const PotteryNotePage = () => {
+    const {potID} = useParams()
+
+    const {isPending, isError, error, data, isLoading} = useQuery({
+        queryKey: ['pot'],
+        queryFn: async () => {
+          const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/pot/${potID}`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        },
+        enabled: !!potID
+      });
+
+      if (isPending || isLoading) return <span>Loading...</span>;
+
+      if (isError) return <span>Error: {error.message}</span>;
+
   return (
     <div>
-      <PotForm/>
+      <PotForm data={data}/>
     </div>
   )
 }

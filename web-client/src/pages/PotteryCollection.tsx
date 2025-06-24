@@ -1,4 +1,5 @@
 import {useQuery} from '@tanstack/react-query';
+import { Link } from 'react-router';
 
 interface IPot {
   id: number;
@@ -38,9 +39,9 @@ export const PotteryCollectionPage = () => {
   return (
     <div>
       {data.map((pot: IPot) => (
-        <span key={pot.id}>
+        <Link key={pot.id} to={`/pot/${pot.id}`}>
           {pot.id} {pot.category}
-        </span>
+        </Link>
       ))}
     </div>
   );
