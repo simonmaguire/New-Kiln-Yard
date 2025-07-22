@@ -1,0 +1,9 @@
+docs/*
+
+web-client/.env
+
+server/kilnyardenv/*
+server/.env
+server/.flaskenv
+
+__pycache__
