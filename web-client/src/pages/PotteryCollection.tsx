@@ -1,5 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 import { Link } from 'react-router';
+import { useContext } from 'react';
+import { AuthContext } from '@/AuthContext';
 
 interface IPot {
   id: number;
@@ -21,10 +23,13 @@ interface IPot {
 }
 
 export const PotteryCollectionPage = () => {
+  const {user} = useContext(AuthContext);
+  if (!user) return null;
+
   const {isPending, isError, error, data, isLoading} = useQuery({
     queryKey: ['pots'],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/pots`);
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/pots?user_id=${user.id}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }

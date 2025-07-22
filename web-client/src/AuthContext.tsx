@@ -3,10 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import {createContext} from 'react'
-import { type Session } from "@supabase/supabase-js";
+import { type Session, type User } from "@supabase/supabase-js";
 
 
 interface IAuthContext {
+    user: User | null,
     session: Session | null,
     isLoading: boolean,
     signOut: (() => void) | undefined 
@@ -21,11 +22,12 @@ const supabase = createClient(
   import.meta.env.VITE_SUPA_ANON_KEY
 );
 
-export const AuthContext = createContext<IAuthContext>({session: null, signOut: undefined, isLoading: true})
+export const AuthContext = createContext<IAuthContext>({user: null, session: null, signOut: undefined, isLoading: true})
 
 
 export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({children}) => {
     const [session, setSession] = useState<Session | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true)
     
     useEffect(() => {
@@ -36,6 +38,9 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({childre
         const {data: { subscription }} = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
         });
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setUser(user ?? null);
+        })
         
         return () => subscription.unsubscribe();
     }, 
@@ -52,7 +57,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({childre
     }
     
     return(
-        <AuthContext.Provider value={{session, signOut, isLoading}}>
+        <AuthContext.Provider value={{user, session, signOut, isLoading}}>
         {children}
     </AuthContext.Provider>
     )

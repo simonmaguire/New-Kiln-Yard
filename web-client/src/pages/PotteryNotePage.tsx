@@ -22,6 +22,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from "react-hook-form"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router"
+import { AuthContext } from "@/AuthContext"
+import { useContext } from "react"
 
 interface IFormFields {
     description: string,
@@ -74,31 +76,30 @@ const formSchema = z.object({
 })
 
 export const PotForm = ({data}) => {
+    const {user} = useContext(AuthContext)
     const navigate = useNavigate()
     const {potID} = useParams()
 
-    console.log(data);
-
     let initialValues: IFormFields = {
         description: data?.description || '',
-        clay: data.clay || '',
-        category: data.category || '',
-        stage: data.stage || '',
-        clayWeight: data.clay_weight || '',
-        throwHeight: data.thrown_height || '',
-        throwWidth: data.thrown_width || '',
-        throwNotes: data.thrown_notes || '',
-        greenDecor: data.green_decor || '',
-        trimNotes: data.trim_notes || '',
+        clay: data?.clay || '',
+        category: data?.category || '',
+        stage: data?.stage || '',
+        clayWeight: data?.clay_weight || '',
+        throwHeight: data?.thrown_height || '',
+        throwWidth: data?.thrown_width || '',
+        throwNotes: data?.thrown_notes || '',
+        greenDecor: data?.green_decor || '',
+        trimNotes: data?.trim_notes || '',
         glazes: '',
-        glazeNotes: data.glaze_notes || '',
-        finishedWidth: data.finished_width || '',
-        finishedHeight: data.finished_height || '',
-        finishedNotes: data.finished_notes || '',
+        glazeNotes: data?.glaze_notes || '',
+        finishedWidth: data?.finished_width || '',
+        finishedHeight: data?.finished_height || '',
+        finishedNotes: data?.finished_notes || '',
     }
-    data.throw_date ? initialValues.throwDate = new Date(data.throw_date) : null;
-    data.trim_date ? initialValues.trimDate = new Date(data.trim_date) : null;
-    data.finished_date ? initialValues.finishedDate = new Date(data.finished_date) : null;
+    data?.throw_date ? initialValues.throwDate = new Date(data.throw_date) : null;
+    data?.trim_date ? initialValues.trimDate = new Date(data.trim_date) : null;
+    data?.finished_date ? initialValues.finishedDate = new Date(data.finished_date) : null;
     
       
     const form = useForm<z.infer<typeof formSchema>>({
@@ -111,7 +112,7 @@ export const PotForm = ({data}) => {
             const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/create-pot`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
+            body: JSON.stringify({...data, user_id: user?.id})
           })
           if (!response.ok) {
               throw new Error('Network response was not ok');
@@ -516,6 +517,7 @@ export const PotForm = ({data}) => {
 
 export const PotteryNotePage = () => {
     const {potID} = useParams()
+    const enabled = !!potID;
 
     const {isPending, isError, error, data, isLoading} = useQuery({
         queryKey: ['pot'],
@@ -526,10 +528,10 @@ export const PotteryNotePage = () => {
           }
           return response.json();
         },
-        enabled: !!potID
+        enabled: enabled
       });
 
-      if (isPending || isLoading) return <span>Loading...</span>;
+      if ((isPending || isLoading) && enabled) return <span>Loading...</span>;
 
       if (isError) return <span>Error: {error.message}</span>;
 

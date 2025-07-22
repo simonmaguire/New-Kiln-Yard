@@ -13,13 +13,15 @@ def index():
 
 @app.route('/pots')
 def pots():
-    data=[]
-    query = sa.select(Pot)
+    user_id = request.args.get('user_id')
+    if user_id is None:
+        return 'user_id parameter is required', 400
+
+    query = sa.select(Pot).where(Pot.user_id == user_id)
     pots = db.session.scalars(query).all()
     pots_schema = PotSchema(many=True)
 
     pots_result = pots_schema.dump(pots)
-
 
     return pots_result
 
@@ -36,10 +38,10 @@ def pot(pot_id):
 @app.route('/create-pot', methods=['POST'])
 def create_pot():
     engine = sa.create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
-
     with Session(engine) as session:
         newPot = Pot(
             description = request.json.get('description') or None,
+            user_id = request.json.get('user_id') or None,
             clay = request.json.get('clay') or None,
             category = request.json.get('category') or None,
             stage = request.json.get('stage') or None,
